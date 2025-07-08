@@ -33,6 +33,12 @@ MANIFEST
 *.manifest
 *.spec
 
+# Build releases
+release_*/
+*.dmg
+*.app
+*.exe
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -145,11 +151,10 @@ dmypy.json
 .vscode-test/
 
 # Kokoro TTS specific files
-kokoro-v1.0.onnx
-voices-v1.0.bin
-voices.json
-audio_output/
-voice_previews/
+models/kokoro-*.onnx
+models/voices-*.bin
+models/voices-*.json
+output/
 *.wav
 *.mp3
 *.m4a

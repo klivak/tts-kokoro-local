@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, filedialog
 import threading
 import os
+import sys
 import tempfile
 import pygame
 import soundfile as sf
@@ -228,27 +229,35 @@ class KokoroTTSApp:
                                "pip install kokoro-onnx")
             return
             
-        # Check for model files
-        model_file = "kokoro-v1.0.onnx"
-        voices_file = "voices-v1.0.bin"
+        # Get model paths - handle both development and packaged versions
+        if hasattr(sys, '_MEIPASS'):
+            # Running as PyInstaller executable
+            models_dir = Path(sys._MEIPASS)
+            model_file = models_dir / "kokoro-v1.0.onnx"
+            voices_file = models_dir / "voices-v1.0.bin"
+        else:
+            # Running from source
+            current_dir = Path(__file__).parent
+            project_root = current_dir.parent
+            models_dir = project_root / "models"
+            model_file = models_dir / "kokoro-v1.0.onnx"
+            voices_file = models_dir / "voices-v1.0.bin"
         
-        if not os.path.exists(model_file):
+        if not model_file.exists():
             messagebox.showwarning("Model Not Found", 
-                                 f"Model file '{model_file}' not found.\n"
-                                 "Please download it from:\n"
-                                 "https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/kokoro-v1.0.onnx")
+                                 f"Model file not found at: {model_file}\n"
+                                 "Please run: python scripts/download_model.py")
             return
             
-        if not os.path.exists(voices_file):
+        if not voices_file.exists():
             messagebox.showwarning("Voices Not Found", 
-                                 f"Voices file '{voices_file}' not found.\n"
-                                 "Please download it from:\n"
-                                 "https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/voices-v1.0.bin")
+                                 f"Voices file not found at: {voices_file}\n"
+                                 "Please run: python scripts/download_model.py")
             return
             
         try:
-            self.kokoro = Kokoro(model_file, voices_file)
-            self.status_label.config(text="Kokoro TTS initialized successfully")
+            self.kokoro = Kokoro(str(model_file), str(voices_file))
+            print("✅ Kokoro TTS initialized successfully")
             
             # Enable preview button if English is selected
             if self.language_var.get().startswith('English'):
@@ -455,18 +464,25 @@ class KokoroTTSApp:
             samples, sample_rate = self.kokoro.create(text, voice=voice_id, speed=1.0)
             
             # Create previews directory if it doesn't exist
-            previews_dir = os.path.join(os.getcwd(), "voice_previews")
-            os.makedirs(previews_dir, exist_ok=True)
+            if hasattr(sys, '_MEIPASS'):
+                # Running as executable - use current working directory
+                previews_dir = Path.cwd() / "voice_previews"
+            else:
+                # Running from source - use project structure
+                current_dir = Path(__file__).parent
+                project_root = current_dir.parent
+                previews_dir = project_root / "output" / "voice_previews"
+            previews_dir.mkdir(parents=True, exist_ok=True)
             
             # Save preview file
-            preview_file = os.path.join(previews_dir, f"preview_{voice_id}.wav")
-            sf.write(preview_file, samples, sample_rate)
+            preview_file = previews_dir / f"preview_{voice_id}.wav"
+            sf.write(str(preview_file), samples, sample_rate)
             
             # Store in cache
-            self.preview_samples[voice_id] = preview_file
+            self.preview_samples[voice_id] = str(preview_file)
             
             # Update UI in main thread
-            self.root.after(0, self._preview_complete, preview_file, readable_voice)
+            self.root.after(0, self._preview_complete, str(preview_file), readable_voice)
             
         except Exception as e:
             self.root.after(0, self._preview_error, str(e))
@@ -542,16 +558,23 @@ class KokoroTTSApp:
             generation_time = time.time() - self.generation_start_time
             
             # Create audio directory if it doesn't exist
-            audio_dir = os.path.join(os.getcwd(), "audio_output")
-            os.makedirs(audio_dir, exist_ok=True)
+            if hasattr(sys, '_MEIPASS'):
+                # Running as executable - use current working directory
+                audio_dir = Path.cwd() / "audio_output"
+            else:
+                # Running from source - use project structure
+                current_dir = Path(__file__).parent
+                project_root = current_dir.parent
+                audio_dir = project_root / "output" / "audio_output"
+            audio_dir.mkdir(parents=True, exist_ok=True)
             
             # Save to file in audio directory
             timestamp = int(time.time())
-            temp_file = os.path.join(audio_dir, f"kokoro_generated_{timestamp}.wav")
-            sf.write(temp_file, samples, sample_rate)
+            temp_file = audio_dir / f"kokoro_generated_{timestamp}.wav"
+            sf.write(str(temp_file), samples, sample_rate)
             
             # Update UI in main thread
-            self.root.after(0, self._generation_complete, temp_file, generation_time)
+            self.root.after(0, self._generation_complete, str(temp_file), generation_time)
             
         except Exception as e:
             self.root.after(0, self._generation_error, str(e))

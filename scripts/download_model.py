@@ -49,6 +49,17 @@ def main():
     print("🔄 Kokoro TTS Model Downloader")
     print("=" * 40)
     
+    # Get project root and models directory
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    models_dir = project_root / "models"
+    
+    # Create models directory if it doesn't exist
+    models_dir.mkdir(exist_ok=True)
+    
+    # Change to models directory
+    os.chdir(models_dir)
+    
     # Model files URLs
     files_to_download = [
         {
@@ -74,9 +85,9 @@ def main():
                 print(f"❌ Failed to download {filename}")
                 return False
     
-    print("\n🎉 All model files are ready!")
+    print(f"\n🎉 All model files are ready in {models_dir}!")
     print("You can now run the TTS application:")
-    print("   python kokoro_tts_gui.py")
+    print("   python run.py")
     
     return True
 
