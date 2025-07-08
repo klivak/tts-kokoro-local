@@ -35,6 +35,8 @@ def check_model_files():
     
     return True
 
+
+
 def main():
     """Main startup function"""
     print("🚀 Starting Kokoro TTS GUI...")

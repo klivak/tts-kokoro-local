@@ -149,6 +149,7 @@ kokoro-v1.0.onnx
 voices-v1.0.bin
 voices.json
 audio_output/
+voice_previews/
 *.wav
 *.mp3
 *.m4a
